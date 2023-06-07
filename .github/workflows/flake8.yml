@@ -19,4 +19,4 @@ jobs:
         pip install -r requirements_dev.txt
         pip install -e .
     - name: Analysing the code with Flake8
-      run: flake8 --config=setup.cfg --statistics --count --show-source --exit-zero
+      run: flake8 --config=setup.cfg --statistics --count --show-source

@@ -1,7 +1,7 @@
 """ This module provides the core functionality for dynamic_overload. """
 # https://peps.python.org/pep-3124/
-from typing import Any, Callable, TypeVar, Generic, Dict, Type, Tuple, List, Union
-from types import UnionType  # type: ignore
+from typing import Any, Callable, TypeVar, Generic, Dict, Type, Tuple, List
+from types import UnionType
 from inspect import signature, Signature, Parameter, BoundArguments
 import warnings
 
