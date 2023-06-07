@@ -1,7 +1,8 @@
 from dynamic_overload import overload
-from typing import Iterable
 from dynamic_overload.overload import NoMatchingOverloadException
+
 import pytest
+from typing import Iterable
 
 
 @overload

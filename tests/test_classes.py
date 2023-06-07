@@ -1,5 +1,6 @@
 from dynamic_overload import OverloadMeta, Overload
 from dynamic_overload.overload import ConflictingOverloadWarning, NoMatchingOverloadException
+
 import pytest
 
 

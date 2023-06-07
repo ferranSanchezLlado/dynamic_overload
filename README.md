@@ -6,6 +6,8 @@ The package also detects collisions between the overloads and warns the user abo
 
 ## Installation
 
+Requires python 3.10 or higher
+
 ```bash
 pip install dynamic-overload
 ```

@@ -1,7 +1,7 @@
 """ This module provides the core functionality for dynamic_overload. """
 # https://peps.python.org/pep-3124/
-from typing import Any, Callable, TypeVar, Generic
-from types import UnionType
+from typing import Any, Callable, TypeVar, Generic, Dict, Type, Tuple, List, Union
+from types import UnionType  # type: ignore
 from inspect import signature, Signature, Parameter, BoundArguments
 import warnings
 
@@ -21,7 +21,7 @@ class ConflictingOverloadWarning(Warning):
     Default behavior is to ignore the warning and use the first overload function that matches the arguments."""
 
 
-class OverloadDict(dict[str, Any]):
+class OverloadDict(Dict[str, Any]):
     """A dictionary that allows overloading of methods. Other than that, it behaves like a normal dictionary."""
 
     def __setitem__(self, key: str, value: Any) -> None:
@@ -38,7 +38,7 @@ class OverloadDict(dict[str, Any]):
             raise TypeError(f"Overloaded method {key} must be a function")
 
 
-def _score_type_hint(arg: Any, hint: type) -> int:
+def _score_type_hint(arg: Any, hint: Type) -> int:
     """Returns a score based on how well the argument matches the type hint.
 
     Returns -1 if the argument does not match the type hint.
@@ -52,13 +52,14 @@ def _score_type_hint(arg: Any, hint: type) -> int:
     if hint is Parameter.empty or hint is Any:
         return 0
 
-    if isinstance(arg, hint):
-        return 1
-    # Handle Union types and Optional types
     if isinstance(hint, UnionType):
         for subhint in hint.__args__:
-            if isinstance(arg, subhint):
+            if _score_type_hint(arg, subhint) > 0:
                 return 1
+        return -1
+
+    if isinstance(arg, hint):
+        return 1
     return -1  # no match
 
 
@@ -162,10 +163,10 @@ class BoundOverloadDispatcher(Generic[T]):
     def __init__(
         self,
         instance: T,
-        owner_cls: type[T],
+        owner_cls: Type[T],
         name: str,
-        overload_list: list[Callable],
-        signatures: list[Signature],
+        overload_list: List[Callable],
+        signatures: List[Signature],
     ) -> None:
         """Initializes the dispatcher."""
         self.instance = instance
@@ -201,7 +202,7 @@ class BoundOverloadDispatcher(Generic[T]):
             return func(self.instance, *args, **kwargs)
 
         # no matching overload in owner class, check next in line
-        super_instance = super(self.owner_cls, self.instance)  # type: ignore
+        super_instance = super(self.owner_cls, self.instance)
         super_call = getattr(super_instance, self.name, None)
         if super_call is not None:
             try:
@@ -218,7 +219,7 @@ class FunctionOverloadDispatcher:
     This class is not meant to be used directly. Instead, use the `overload` decorator.
     """
 
-    def __init__(self, name: str, overload_list: list[Callable], signatures: list[Signature]) -> None:
+    def __init__(self, name: str, overload_list: List[Callable], signatures: List[Signature]) -> None:
         """Initializes the dispatcher."""
         self.name = name
         self.overload_list = overload_list
@@ -247,12 +248,12 @@ class FunctionOverloadDispatcher:
         return func(*args, **kwargs)
 
 
-class OverloadItem:
+class OverloadItem(Generic[T]):
     """A class that represents an overloaded method or function."""
 
     name: str
-    overloads: list[Callable]
-    signatures: list[Signature]
+    overloads: List[Callable]
+    signatures: List[Signature]
 
     def __init__(self, func: Callable) -> None:
         """Initializes the overload item."""
@@ -278,7 +279,7 @@ class OverloadItem:
         self.overloads.append(func)
         self.signatures.append(sig)
 
-    def __get__(self, instance, owner_cls):
+    def __get__(self, instance: T, owner_cls: Type[T]) -> BoundOverloadDispatcher[T]:
         """Returns a bound dispatcher for instance methods, or a dispatcher for static/class methods."""
         return BoundOverloadDispatcher(instance, owner_cls, self.name, self.overloads, self.signatures)
 
@@ -306,7 +307,7 @@ class OverloadMeta(type):
     """A metaclass that allows overloading methods and functions."""
 
     @classmethod
-    def __prepare__(mcs, _name: str, _bases: tuple[type, ...], /, **_kwargs: Any) -> OverloadDict:
+    def __prepare__(mcs, _name: str, _bases: Tuple[type, ...], /, **_kwargs: Any) -> OverloadDict:
         """Returns a dictionary that allows overloading."""
         return OverloadDict()
 
@@ -320,7 +321,7 @@ class Overload(metaclass=OverloadMeta):
     """A class that allows overloading methods and functions."""
 
 
-_overload_functions: dict[str, OverloadItem] = {}
+_overload_functions: Dict[str, OverloadItem] = {}
 """A dictionary that maps function names to their overloads. Used by the `overload` decorator."""
 
 
@@ -334,3 +335,13 @@ def overload(func: Callable) -> Callable:
 
     function = _overload_functions[name]
     return function
+
+
+if __name__ == "__main__":
+
+    class SaysHey(Overload):
+        def hello(self, x: int, y: Union[int, str]) -> None:
+            pass
+
+    a = SaysHey()
+    a.hello(1, 2)
