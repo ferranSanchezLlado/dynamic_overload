@@ -76,5 +76,3 @@ assert Integer(1.0).x == 1
 ## License
 
 [MIT](https://choosealicense.com/licenses/mit/)
-```
-
