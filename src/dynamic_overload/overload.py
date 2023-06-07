@@ -335,13 +335,3 @@ def overload(func: Callable) -> Callable:
 
     function = _overload_functions[name]
     return function
-
-
-if __name__ == "__main__":
-
-    class SaysHey(Overload):
-        def hello(self, x: int, y: Union[int, str]) -> None:
-            pass
-
-    a = SaysHey()
-    a.hello(1, 2)
